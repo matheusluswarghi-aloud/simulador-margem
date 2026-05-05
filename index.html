@@ -549,7 +549,12 @@ window.addEventListener('resize',()=>{
 });
 
 function rates(){
-  const g=(i,d)=>+(id(i)?.value)||d;
+  const g=(i,d)=>{
+    const raw=id(i)?.value;
+    if(raw===''||raw==null) return d;
+    const n=parseFloat(raw);
+    return Number.isFinite(n) ? n : d;
+  };
   return{
     CHURN:g('r-churn',3.10)/100,
     HM:g('r-hm',4.50)/100,
