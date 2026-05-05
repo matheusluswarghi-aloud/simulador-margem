@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Margem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#070910;
+  --s1:#0D1018;
+  --s2:#131720;
+  --s3:#181D28;
+  --b1:rgba(255,255,255,0.05);
+  --b2:rgba(255,255,255,0.09);
+  --b3:rgba(255,255,255,0.14);
+  --text:#E4E8F4;
+  --muted:#5E6880;
+  --dim:#2E3448;
+  --green:#2DD4A0;
+  --green-bg:rgba(45,212,160,0.09);
+  --green-bd:rgba(45,212,160,0.22);
+  --red:#F87171;
+  --red-bg:rgba(248,113,113,0.09);
+  --red-bd:rgba(248,113,113,0.22);
+  --indigo:#818CF8;
+  --indigo-bg:rgba(129,140,248,0.09);
+  --indigo-bd:rgba(129,140,248,0.22);
+  --blue:#60A5FA;
+  --blue-bg:rgba(96,165,250,0.09);
+  --accent:#6366F1;
+  --font:'Plus Jakarta Sans',sans-serif;
+  --r:10px;
+  --r-sm:7px;
+  --sidebar:284px;
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ── Layout ── */
+.layout{display:grid;grid-template-columns:var(--sidebar) 1fr;grid-template-rows:64px 1fr;min-height:100vh}
+
+/* ── Header ── */
+header{
+  grid-column:1/-1;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;
+  background:var(--s1);
+  border-bottom:1px solid var(--b1);
+  position:sticky;top:0;z-index:10;
+  backdrop-filter:blur(12px);
+}
+.logo{display:flex;align-items:center;gap:11px}
+.logo-icon{
+  width:34px;height:34px;
+  background:linear-gradient(135deg,#6366F1,#8B5CF6);
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.logo-title{font-size:15px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+.logo-sub{font-size:11px;color:var(--muted);font-weight:400;margin-top:1px}
+
+.view-tgl{
+  display:flex;background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:4px;gap:3px;
+}
+.view-tgl button{
+  background:transparent;border:none;color:var(--muted);font-family:var(--font);
+  font-size:12px;font-weight:600;padding:7px 18px;border-radius:7px;cursor:pointer;
+  transition:all .2s;white-space:nowrap;letter-spacing:.01em;
+}
+.view-tgl button.on{
+  background:var(--s3);color:var(--text);
+  box-shadow:0 1px 4px rgba(0,0,0,.5);
+}
+.view-tgl button:hover:not(.on){color:var(--text)}
+
+/* ── Sidebar ── */
+aside{
+  background:var(--s1);border-right:1px solid var(--b1);
+  padding:22px 18px;overflow-y:auto;
+  height:calc(100vh - 64px);position:sticky;top:64px;
+}
+
+.sec-lbl{
+  font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:10px;
+}
+
+.ig{margin-bottom:12px}
+.ig label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px}
+.ig input{
+  width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r-sm);
+  color:var(--text);font-family:var(--font);font-size:15px;font-weight:700;
+  padding:9px 12px;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+  -moz-appearance:textfield;appearance:textfield;
+}
+.ig input::-webkit-inner-spin-button,.ig input::-webkit-outer-spin-button{-webkit-appearance:none}
+.ig input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.18)}
+
+.ibadge{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--s2);border:1px solid var(--b1);border-radius:var(--r-sm);
+  padding:9px 12px;margin-bottom:12px;
+}
+.ibadge-lbl{font-size:11px;color:var(--muted)}
+.ibadge-val{font-size:13px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+
+.divider{height:1px;background:var(--b1);margin:18px 0}
+
+.rates{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r-sm);overflow:hidden}
+.rate-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 11px;border-bottom:1px solid var(--b1);gap:8px;
+}
+.rate-row:last-child{border-bottom:none}
+.rate-name{font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.rate-input-wrap{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.rate-input{
+  width:58px;background:var(--s3);border:1px solid var(--b2);border-radius:5px;
+  color:var(--text);font-family:var(--font);font-size:11px;font-weight:700;
+  padding:4px 6px;outline:none;text-align:right;
+  transition:border-color .15s,box-shadow .15s;
+  -moz-appearance:textfield;appearance:textfield;
+}
+.rate-input::-webkit-inner-spin-button,.rate-input::-webkit-outer-spin-button{-webkit-appearance:none}
+.rate-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.18)}
+.rate-unit{font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap}
+.rate-row.comm .rate-name{color:var(--indigo)}
+.rate-row.comm .rate-input{color:var(--indigo);border-color:var(--indigo-bd)}
+.rate-row.comm .rate-unit{color:var(--indigo)}
+
+/* ── Main ── */
+main{padding:22px 26px;overflow-y:auto;height:calc(100vh - 64px)}
+
+/* ── Metric cards ── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.mc{
+  background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);
+  padding:14px 16px;transition:border-color .2s,transform .15s;
+}
+.mc:hover{border-color:var(--b2);transform:translateY(-1px)}
+.mc-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.mc-val{
+  font-size:17px;font-weight:800;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;color:var(--text);line-height:1.2;
+}
+.mc-val.green{color:var(--green)}
+.mc-val.red{color:var(--red)}
+.mc-val.indigo{color:var(--indigo)}
+.mc-sub{font-size:10px;color:var(--dim);margin-top:3px;font-weight:500}
+
+/* ── DRE unified ── */
+.dre{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden}
+
+.dr{
+  display:grid;grid-template-columns:1fr 88px 130px;
+  align-items:center;padding:10px 18px;
+  border-bottom:1px solid var(--b1);gap:12px;
+  animation:slideIn .25s ease both;
+  transition:background .15s;
+}
+.dr:last-child{border-bottom:none}
+.dr:hover{background:var(--s2)}
+.dr.sub{background:var(--s2);border-bottom-color:var(--b2)}
+.dr.lb{background:var(--indigo-bg);border-bottom-color:var(--indigo-bd);border-top:1px solid var(--indigo-bd)}
+.dr.tot{padding:13px 18px}
+
+.dl{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dl.b{color:var(--text);font-weight:600}
+.dl.ib{color:var(--indigo);font-weight:700}
+.dtag{
+  font-size:10px;color:var(--dim);background:var(--s3);
+  padding:2px 6px;border-radius:4px;font-weight:600;letter-spacing:.02em;
+}
+
+.dbar{height:3px;background:var(--b2);border-radius:2px;overflow:hidden;width:100%}
+.dbar-fill{height:100%;border-radius:2px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+.dv{
+  font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
+  color:var(--text);text-align:right;letter-spacing:-.01em;
+}
+.dv.neg{color:var(--red)}
+.dv.ib{color:var(--indigo)}
+.dv.big{font-size:16px;font-weight:800}
+
+/* ── Split table ── */
+.split-t{width:100%;border-collapse:collapse}
+.split-t th{
+  padding:11px 16px;text-align:right;
+  font-size:10px;font-weight:700;color:var(--muted);
+  letter-spacing:.07em;text-transform:uppercase;
+  background:var(--s2);border-bottom:1px solid var(--b2);
+}
+.split-t th:first-child{text-align:left;width:38%}
+.split-t td{
+  padding:9px 16px;font-size:13px;font-variant-numeric:tabular-nums;
+  color:var(--muted);text-align:right;border-bottom:1px solid var(--b1);
+  font-weight:500;
+}
+.split-t td:first-child{text-align:left;color:var(--muted)}
+.split-t tr.sub td{background:var(--s2);color:var(--text);font-weight:700}
+.split-t tr.lb td{background:var(--indigo-bg);color:var(--indigo);font-weight:700;border-color:var(--indigo-bd)}
+.split-t tr.tot td{font-weight:800;font-size:14px;padding:12px 16px}
+.split-t .neg{color:var(--red)!important}
+.split-t .upcol{color:var(--blue)!important}
+.split-t .tcol{color:var(--text)!important}
+
+@keyframes slideIn{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* staggered rows */
+.dr:nth-child(1){animation-delay:.02s}
+.dr:nth-child(2){animation-delay:.04s}
+.dr:nth-child(3){animation-delay:.06s}
+.dr:nth-child(4){animation-delay:.08s}
+.dr:nth-child(5){animation-delay:.10s}
+.dr:nth-child(6){animation-delay:.12s}
+.dr:nth-child(7){animation-delay:.14s}
+.dr:nth-child(8){animation-delay:.16s}
+.dr:nth-child(9){animation-delay:.18s}
+.dr:nth-child(10){animation-delay:.20s}
+.dr:nth-child(11){animation-delay:.22s}
+.dr:nth-child(12){animation-delay:.24s}
+.dr:nth-child(13){animation-delay:.26s}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+        <path d="M2.5 12.5L6.5 8.5L9.5 11.5L14.5 4.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-title">Simulador de Margem</div>
+      <div class="logo-sub">Contribuição e caixa</div>
+    </div>
+  </div>
+  <div class="view-tgl">
+    <button class="on" id="btn-u" onclick="setView('unified')">DRE Unificado</button>
+    <button id="btn-s" onclick="setView('split')">Front × Upsell</button>
+  </div>
+</header>
+
+<!-- Sidebar -->
+<aside>
+  <div class="sec-lbl" style="margin-top:2px">Front-end</div>
+  <div class="ibadge">
+    <span class="ibadge-lbl">Ticket (fixo)</span>
+    <span class="ibadge-val">R$ 297,00</span>
+  </div>
+  <div class="ig">
+    <label>Vendas (unidades)</label>
+    <input type="number" id="i-fs" value="100" min="0" step="1" oninput="fromSales()">
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec-lbl">Upsell</div>
+  <div class="ibadge">
+    <span class="ibadge-lbl">Ticket (fixo)</span>
+    <span class="ibadge-val">R$ 497,00</span>
+  </div>
+  <div class="ig">
+    <label>Vendas upsell (unidades)</label>
+    <input type="number" id="i-us" value="20" min="0" step="1" oninput="fromSalesU()">
+  </div>
+  <div class="ig">
+    <label>Taxa de conversão upsell (%)</label>
+    <input type="number" id="i-cr" value="20.0" min="0" max="100" step="0.1" oninput="fromRate()">
+  </div>
+  <div class="ibadge" style="margin-bottom:0">
+    <span class="ibadge-lbl">Ticket médio calculado</span>
+    <span class="ibadge-val" id="ticket-medio">—</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec-lbl">Taxas aplicadas</div>
+  <div class="rates">
+    <div class="rate-row">
+      <span class="rate-name">Churn</span>
+      <div class="rate-input-wrap">
+        <input class="rate-input" type="number" id="r-churn" value="3.10" min="0" max="100" step="0.01" oninput="recalc()">
+        <span class="rate-unit">% rec. bruta</span>
+      </div>
+    </div>
+    <div class="rate-row">
+      <span class="rate-name">Hotmart</span>
+      <div class="rate-input-wrap">
+        <input class="rate-input" type="number" id="r-hm" value="4.50" min="0" max="100" step="0.01" oninput="recalc()">
+        <span class="rate-unit">% pós-churn</span>
+      </div>
+    </div>
+    <div class="rate-row">
+      <span class="rate-name">Impostos</span>
+      <div class="rate-input-wrap">
+        <input class="rate-input" type="number" id="r-imp" value="8.80" min="0" max="100" step="0.01" oninput="recalc()">
+        <span class="rate-unit">% pós-churn</span>
+      </div>
+    </div>
+    <div class="rate-row">
+      <span class="rate-name">Conversação</span>
+      <div class="rate-input-wrap">
+        <span class="rate-unit">R$</span>
+        <input class="rate-input" type="number" id="r-conv" value="5" min="0" step="0.50" oninput="recalc()">
+        <span class="rate-unit">/ upsell</span>
+      </div>
+    </div>
+    <div class="rate-row">
+      <span class="rate-name">Mensageria</span>
+      <div class="rate-input-wrap">
+        <input class="rate-input" type="number" id="r-mens" value="3.60" min="0" max="100" step="0.01" oninput="recalc()">
+        <span class="rate-unit">% rec. bruta</span>
+      </div>
+    </div>
+    <div class="rate-row">
+      <span class="rate-name">CPA</span>
+      <div class="rate-input-wrap">
+        <span class="rate-unit">R$</span>
+        <input class="rate-input" type="number" id="r-cpa" value="150" min="0" step="1" oninput="recalc()">
+        <span class="rate-unit">/ front</span>
+      </div>
+    </div>
+    <div class="rate-row comm">
+      <span class="rate-name">Comissões (sua)</span>
+      <div class="rate-input-wrap">
+        <input class="rate-input" type="number" id="r-com" value="5.00" min="0" max="100" step="0.01" oninput="recalc()">
+        <span class="rate-unit">% pós-churn</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main>
+  <div class="metrics">
+    <div class="mc">
+      <div class="mc-lbl">Receita bruta</div>
+      <div class="mc-val" id="c-bruta">—</div>
+    </div>
+    <div class="mc">
+      <div class="mc-lbl">Receita líquida</div>
+      <div class="mc-val" id="c-liq">—</div>
+    </div>
+    <div class="mc">
+      <div class="mc-lbl">Lucro bruto</div>
+      <div class="mc-val indigo" id="c-lb">—</div>
+      <div class="mc-sub" id="c-lb-sub">antes das suas comissões</div>
+    </div>
+    <div class="mc">
+      <div class="mc-lbl">Margem de caixa</div>
+      <div class="mc-val" id="c-mg">—</div>
+    </div>
+    <div class="mc">
+      <div class="mc-lbl">Margem %</div>
+      <div class="mc-val" id="c-pct">—</div>
+      <div class="mc-sub" id="c-tickets">— vendas totais</div>
+    </div>
+  </div>
+
+  <div class="dre" id="dre"></div>
+</main>
+
+</div>
+<script>
+const TF=297,TU=497;
+let view='unified';
+const prev={};
+function rates(){
+  const g=(i,d)=>+(document.getElementById(i)?.value)||d;
+  return{
+    CHURN:g('r-churn',3.10)/100,
+    HM:g('r-hm',4.50)/100,
+    IMP:g('r-imp',8.80)/100,
+    COM:g('r-com',5.00)/100,
+    CONV:g('r-conv',5),
+    MENS:g('r-mens',3.60)/100,
+    CPA:g('r-cpa',150),
+  };
+}
+
+function setView(v){
+  view=v;
+  document.getElementById('btn-u').className=v==='unified'?'on':'';
+  document.getElementById('btn-s').className=v==='split'?'on':'';
+  recalc();
+}
+function fromSales(){
+  const fs=+id('i-fs').value||0,us=+id('i-us').value||0;
+  if(document.activeElement!==id('i-cr'))
+    id('i-cr').value=fs>0?(us/fs*100).toFixed(1):'0.0';
+  recalc();
+}
+function fromSalesU(){
+  const fs=+id('i-fs').value||0,us=+id('i-us').value||0;
+  id('i-cr').value=fs>0?(us/fs*100).toFixed(1):'0.0';
+  recalc();
+}
+function fromRate(){
+  const fs=+id('i-fs').value||0,r=+id('i-cr').value||0;
+  id('i-us').value=Math.round(fs*r/100);
+  recalc();
+}
+
+function id(s){return document.getElementById(s)}
+function brl(v){
+  const n=v<0;
+  return(n?'- ':'')+'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function pct(v){return v.toFixed(2)+'%'}
+
+function calcAll(rb,fs,us){
+  const R=rates();
+  const churnV=rb*R.CHURN,posChurn=rb-churnV;
+  const hotmartV=posChurn*R.HM,recLiq=posChurn-hotmartV;
+  const impostosV=posChurn*R.IMP,conversacaoV=us*R.CONV;
+  const mensageriaV=rb*R.MENS,cpaV=fs*R.CPA;
+  const lucroBruto=recLiq-impostosV-conversacaoV-mensageriaV-cpaV;
+  const comissoesV=posChurn*R.COM;
+  const margem=lucroBruto-comissoesV;
+  const margemPct=rb>0?(margem/rb)*100:0;
+  const lbPct=rb>0?(lucroBruto/rb)*100:0;
+  return{rb,churnV,posChurn,hotmartV,recLiq,impostosV,conversacaoV,mensageriaV,cpaV,lucroBruto,lbPct,comissoesV,margem,margemPct,R};
+}
+
+function animVal(el,target,fmt){
+  const key=el.id||el;
+  const from=prev[key]!==undefined?prev[key]:target;
+  prev[key]=target;
+  const dur=380,t0=performance.now();
+  const f=t=>{
+    const p=Math.min((t-t0)/dur,1),e=1-Math.pow(1-p,3);
+    const cur=from+(target-from)*e;
+    el.textContent=fmt(cur);
+    if(p<1)requestAnimationFrame(f);
+  };
+  requestAnimationFrame(f);
+}
+
+function recalc(){
+  const fs=+id('i-fs').value||0,us=+id('i-us').value||0;
+  if(document.activeElement!==id('i-cr'))
+    id('i-cr').value=fs>0?(us/fs*100).toFixed(1):'0.0';
+
+  const fRec=fs*TF,uRec=us*TU,tv=fs+us,rb=fRec+uRec;
+  const tm=tv>0?rb/tv:TF;
+  id('ticket-medio').textContent=brl(tm);
+
+  const C=calcAll(rb,fs,us);
+  const isPos=C.margem>=0,isLbPos=C.lucroBruto>=0;
+
+  animVal(id('c-bruta'),C.rb,brl);
+  animVal(id('c-liq'),C.recLiq,brl);
+  animVal(id('c-lb'),C.lucroBruto,brl);
+  id('c-lb-sub').textContent=pct(C.lbPct)+' da receita bruta';
+  animVal(id('c-mg'),C.margem,brl);
+  id('c-mg').className='mc-val '+(isPos?'green':'red');
+  id('c-pct').textContent=pct(C.margemPct);
+  id('c-pct').className='mc-val '+(isPos?'green':'red');
+  id('c-tickets').textContent=tv+' vendas totais';
+
+  if(view==='unified') renderUnified(C,tv,tm,rb,isPos,isLbPos);
+  else renderSplit(fRec,uRec,fs,us,tv,tm,rb,C,isPos);
+}
+
+function bar(pct,color){
+  return`<div class="dbar"><div class="dbar-fill" style="width:${Math.abs(pct)}%;background:${color}"></div></div>`;
+}
+
+function renderUnified(C,tv,tm,rb,isPos,isLbPos){
+  const b=rb||1;
+  function row(label,val,tag,cls,barPct,barColor){
+    const neg=val<0,isLb=cls==='lb',isSub=cls==='sub',isTot=cls==='tot';
+    const rowCls=`dr ${cls}`;
+    const lblCls=`dl${isSub?'  b':''} ${isLb?' ib':''}`;
+    const valCls=`dv${neg?' neg':''} ${isLb?' ib':''} ${isTot?' big':''}`;
+    const tagHtml=tag?`<span class="dtag">${tag}</span>`:'';
+    return`<div class="${rowCls}">
+      <div class="${lblCls}">${label}${tagHtml}</div>
+      ${bar(barPct||0,barColor||'var(--b3)')}
+      <div class="${valCls}">${brl(val)}</div>
+    </div>`;
+  }
+
+  const totBg=isPos?'var(--green-bg)':'var(--red-bg)';
+  const totBd=isPos?'var(--green-bd)':'var(--red-bd)';
+  const totC=isPos?'var(--green)':'var(--red)';
+  const R=C.R;
+
+  let h='';
+  h+=`<div class="dr"><div class="dl">Vendas totais</div>${bar(0,'')}<div class="dv">${tv} und.</div></div>`;
+  h+=`<div class="dr"><div class="dl">Ticket médio</div>${bar(0,'')}<div class="dv">${brl(tm)}</div></div>`;
+  h+=row('Receita bruta',C.rb,'','sub',100,'var(--b3)');
+  h+=row(`(-) Churn — ${pct(R.CHURN*100)}`,-C.churnV,'s/ rec. bruta','',C.churnV/b*100,'var(--red)');
+  h+=row('Receita pós-churn',C.posChurn,'','sub',C.posChurn/b*100,'var(--green)');
+  h+=row(`(-) Hotmart — ${pct(R.HM*100)}`,-C.hotmartV,'s/ pós-churn','',C.hotmartV/b*100,'var(--red)');
+  h+=row('Receita líquida',C.recLiq,'','sub',C.recLiq/b*100,'var(--green)');
+  h+=row(`(-) Impostos — ${pct(R.IMP*100)}`,-C.impostosV,'s/ pós-churn','',C.impostosV/b*100,'var(--red)');
+  h+=row(`(-) Conversação — R$ ${R.CONV}/und.`,-C.conversacaoV,'upsell','',C.conversacaoV/b*100,'var(--red)');
+  h+=row(`(-) Mensageria — ${pct(R.MENS*100)}`,-C.mensageriaV,'s/ rec. bruta','',C.mensageriaV/b*100,'var(--red)');
+  h+=row(`(-) CPA — R$ ${R.CPA}/und.`,-C.cpaV,'front','',C.cpaV/b*100,'var(--red)');
+  h+=row('Lucro bruto',C.lucroBruto,'antes das suas comissões','lb',C.lucroBruto/b*100,'var(--indigo)');
+  h+=row(`(-) Comissões — ${pct(R.COM*100)}`,-C.comissoesV,'sua remuneração · s/ pós-churn','',C.comissoesV/b*100,'var(--red)');
+  h+=`<div class="dr tot" style="background:${totBg};border-top:1px solid ${totBd}">
+    <div class="dl b" style="color:${totC};font-size:14px">Margem de caixa</div>
+    <div style="text-align:right"><span style="font-size:13px;font-weight:700;color:${totC}">${pct(C.margemPct)}</span></div>
+    <div class="dv big" style="color:${totC}">${brl(C.margem)}</div>
+  </div>`;
+
+  id('dre').innerHTML=h;
+}
+
+function renderSplit(fRec,uRec,fs,us,tv,tm,rb,C,isPos){
+  const Cf=calcAll(fRec,fs,0),Cu=calcAll(uRec,0,us);
+  const totBg=isPos?'var(--green-bg)':'var(--red-bg)';
+  const totC=isPos?'var(--green)':'var(--red)';
+  const R=C.R;
+
+  function row(lbl,fv,uv,tv2,cls,neg,tag){
+    const n=neg?'neg':'';
+    const tg=tag?`<span style="font-size:10px;color:var(--dim);background:var(--s3);padding:1px 5px;border-radius:3px;font-weight:600;margin-left:6px">${tag}</span>`:'';
+    return`<tr class="${cls}"><td>${lbl}${tg}</td><td class="${n}">${fv}</td><td class="${n} upcol">${uv}</td><td class="${n} tcol">${tv2}</td></tr>`;
+  }
+
+  let h=`<table class="split-t"><thead><tr>
+    <th>Item</th><th>Front-end</th><th style="color:var(--blue)">Upsell</th><th>Total</th>
+  </tr></thead><tbody>`;
+
+  h+=row('Vendas',fs+' und.',us+' und.',tv+' und.','','','');
+  h+=row('Ticket médio',brl(TF),brl(TU),brl(tm),'','','');
+  h+=row('Receita bruta',brl(fRec),brl(uRec),brl(rb),'sub','','');
+  h+=row(`(-) Churn ${pct(R.CHURN*100)}`,`-${brl(Cf.churnV)}`,`-${brl(Cu.churnV)}`,`-${brl(C.churnV)}`,'',true,'');
+  h+=row('Receita pós-churn',brl(Cf.posChurn),brl(Cu.posChurn),brl(C.posChurn),'sub','','');
+  h+=row(`(-) Hotmart ${pct(R.HM*100)}`,`-${brl(Cf.hotmartV)}`,`-${brl(Cu.hotmartV)}`,`-${brl(C.hotmartV)}`,'',true,'');
+  h+=row('Receita líquida',brl(Cf.recLiq),brl(Cu.recLiq),brl(C.recLiq),'sub','','');
+  h+=row(`(-) Impostos ${pct(R.IMP*100)}`,`-${brl(Cf.impostosV)}`,`-${brl(Cu.impostosV)}`,`-${brl(C.impostosV)}`,'',true,'');
+  h+=row(`(-) Conversação R$${R.CONV}`,'R$ 0,00',`-${brl(Cu.conversacaoV)}`,`-${brl(C.conversacaoV)}`,'',true,'upsell');
+  h+=row(`(-) Mensageria ${pct(R.MENS*100)}`,`-${brl(Cf.mensageriaV)}`,`-${brl(Cu.mensageriaV)}`,`-${brl(C.mensageriaV)}`,'',true,'');
+  h+=row(`(-) CPA R$${R.CPA}`,`-${brl(Cf.cpaV)}`,'R$ 0,00',`-${brl(C.cpaV)}`,'',true,'front');
+  h+=`<tr class="lb"><td>Lucro bruto</td><td>${brl(Cf.lucroBruto)}</td><td class="upcol">${brl(Cu.lucroBruto)}</td><td>${brl(C.lucroBruto)}</td></tr>`;
+  h+=row(`(-) Comissões ${pct(R.COM*100)}`,`-${brl(Cf.comissoesV)}`,`-${brl(Cu.comissoesV)}`,`-${brl(C.comissoesV)}`,'',true,'sua remuneração');
+  h+=`<tr class="tot" style="background:${totBg}">
+    <td style="color:${totC}">Margem de caixa</td>
+    <td style="color:${totC}">${brl(Cf.margem)}</td>
+    <td style="color:${totC}">${brl(Cu.margem)}</td>
+    <td style="color:${totC}">${brl(C.margem)} <span style="font-size:11px;opacity:.65">(${pct(C.margemPct)})</span></td>
+  </tr>`;
+
+  h+=`</tbody></table>`;
+  id('dre').innerHTML=h;
+}
+
+recalc();
+</script>
+</body>
+</html>
